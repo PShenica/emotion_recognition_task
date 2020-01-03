@@ -49,7 +49,7 @@ model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
 
 # compile model
-opt = keras.optimizers.Adam(learning_rate = 0.003)
+opt = keras.optimizers.Adam(learning_rate = 0.0003)
 model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 cnn_history = model.fit_generator(
     train_generator,
