@@ -74,8 +74,8 @@ def data_to_png_format(file_dir, bath_name):
             # stft = np.abs(librosa.stft(samples))
 
             # different spectrogram forms
-            mel = librosa.feature.melspectrogram(y = samples, sr = sample_rate)
-            # mfccs = librosa.feature.mfcc(y=samples, sr=sample_rate, n_mfcc=25)
+            # mel = librosa.feature.melspectrogram(y = samples, sr = sample_rate)
+            mfccs = librosa.feature.mfcc(y=samples, sr=sample_rate, n_mfcc=25)
             # chroma = librosa.feature.chroma_stft(S = stft, sr = sample_rate)
             # contrast = librosa.feature.spectral_contrast(S = stft, sr = sample_rate)
             # tonnetz = librosa.feature.tonnetz(y = librosa.effects.harmonic(samples), sr = sample_rate)
@@ -89,7 +89,7 @@ def data_to_png_format(file_dir, bath_name):
 
             # save spectrogram
             file_path = spectrogram_path + "/" + bath_name + "/" + name + "/" + item + ".png"
-            librosa.display.specshow(librosa.power_to_db(mel, ref=np.max))
+            librosa.display.specshow(librosa.power_to_db(mfccs, ref=np.max))
             plt.savefig(file_path, dpi=400, bbox_inches='tight', pad_inches=0)
             plt.close('all')
 
