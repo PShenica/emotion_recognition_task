@@ -16,18 +16,18 @@ from sklearn.metrics import classification_report, confusion_matrix
 random.seed(0)
 np.random.seed(0)
 
-num_classes = 7
 class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+num_classes = len(class_names)
 
 image_size = (64, 64)
 
 train_bath_size = 32
 test_bath_size = 14
 
-steps_per_epoch = 32  # train image count / train bath size = steps per epoch
-validation_steps = 16  # val image count / test bath size = validation steps
+steps_per_epoch = 12  # train image count / train bath size = steps per epoch
+validation_steps = 5  # val image count / test bath size = validation steps
 
-epochs = 10
+epochs = 20
 
 train_generator = image.ImageDataGenerator().flow_from_directory(
     "dataset/spectrogram_png/train",
