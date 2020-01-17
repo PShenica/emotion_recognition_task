@@ -12,6 +12,18 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.preprocessing import image
 from sklearn.metrics import classification_report, confusion_matrix
 
+
+def count_files_in_dir(path):
+    """return number of files in directory and subdirectories"""
+    number_of_files = 0
+
+    for r, d, files in os.walk(path):
+        if os.path.basename(r) in class_names:
+            number_of_files += len(files)
+
+    return number_of_files
+
+
 # fix random seed
 random.seed(0)
 np.random.seed(0)
@@ -27,6 +39,12 @@ train_bath_size = 32
 test_bath_size = 14
 
 epochs = 20
+
+steps_per_epoch = count_files_in_dir(train_images_path) // train_bath_size
+validation_steps = count_files_in_dir(test_images_path) // test_bath_size
+
+print("steps per epoch: ", steps_per_epoch)
+print("validation steps", validation_steps)
 
 train_generator = image.ImageDataGenerator().flow_from_directory(
     train_images_path,
@@ -47,23 +65,6 @@ test_generator = image.ImageDataGenerator().flow_from_directory(
     # class_mode='categorical',
     shuffle=False
     )
-
-
-def count_files_in_dir(path):
-    """return number of files in directory and subdirectories"""
-    number_of_files = 0
-
-    for r, d, files in os.walk(path):
-        number_of_files += len(files)
-
-    return number_of_files
-
-
-steps_per_epoch = count_files_in_dir(train_images_path) // train_bath_size
-validation_steps = count_files_in_dir(test_images_path) // test_bath_size
-
-print("steps per epoch: ", steps_per_epoch)
-print("validation steps", validation_steps)
 
 # building model
 model = Sequential()
