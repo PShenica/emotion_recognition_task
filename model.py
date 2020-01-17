@@ -16,6 +16,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 random.seed(0)
 np.random.seed(0)
 
+train_images_path = "dataset/spectrogram_png/train"
+test_images_path = "dataset/spectrogram_png/validation"
 class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 num_classes = len(class_names)
 
@@ -24,13 +26,10 @@ image_size = (64, 64)
 train_bath_size = 32
 test_bath_size = 14
 
-steps_per_epoch = 12  # train image count / train bath size = steps per epoch
-validation_steps = 5  # val image count / test bath size = validation steps
-
 epochs = 20
 
 train_generator = image.ImageDataGenerator().flow_from_directory(
-    "dataset/spectrogram_png/train",
+    train_images_path,
     classes=class_names,
     target_size=image_size,
     color_mode='grayscale',
@@ -40,7 +39,7 @@ train_generator = image.ImageDataGenerator().flow_from_directory(
     )
 
 test_generator = image.ImageDataGenerator().flow_from_directory(
-    "dataset/spectrogram_png/validation",
+    test_images_path,
     classes=class_names,
     target_size=image_size,
     color_mode='grayscale',
@@ -48,6 +47,23 @@ test_generator = image.ImageDataGenerator().flow_from_directory(
     # class_mode='categorical',
     shuffle=False
     )
+
+
+def count_files_in_dir(path):
+    """return number of files in directory and subdirectories"""
+    number_of_files = 0
+
+    for r, d, files in os.walk(path):
+        number_of_files += len(files)
+
+    return number_of_files
+
+
+steps_per_epoch = count_files_in_dir(train_images_path) // train_bath_size
+validation_steps = count_files_in_dir(test_images_path) // test_bath_size
+
+print("steps per epoch: ", steps_per_epoch)
+print("validation steps", validation_steps)
 
 # building model
 model = Sequential()
