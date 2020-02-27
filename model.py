@@ -5,65 +5,78 @@ import seaborn as sn
 import os
 import keras
 import pandas as pd
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers import Dense
 from keras.layers import Flatten, Dropout
 from keras.layers import Conv2D, MaxPooling2D
 from keras.preprocessing import image
 from sklearn.metrics import classification_report, confusion_matrix
 
-
-def count_files_in_dir(path):
-    """return number of files in directory and subdirectories"""
-    number_of_files = 0
-
-    for r, d, files in os.walk(path):
-        if os.path.basename(r) in class_names:
-            number_of_files += len(files)
-
-    return number_of_files
-
-
 # fix random seed
 random.seed(0)
 np.random.seed(0)
 
-train_images_path = "dataset/spectrogram_png/train"
-test_images_path = "dataset/spectrogram_png/validation"
-class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
-num_classes = len(class_names)
+train_path = "dataset/spectrogram_images/train"
+validation_path = "dataset/spectrogram_images/validation"
+test_path = "dataset/spectrogram_images/test"
 
+class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+
+num_classes = len(class_names)
 image_size = (64, 64)
 
 train_bath_size = 32
-test_bath_size = 14
+validation_bath_size = 14
+test_bath_size = 12
 
 epochs = 20
 
-steps_per_epoch = count_files_in_dir(train_images_path) // train_bath_size
-validation_steps = count_files_in_dir(test_images_path) // test_bath_size
+
+def get_steps_number(path, bath_size):
+    return count_files(path) // bath_size
+
+
+def count_files(path):
+    files_counter = 0
+
+    for r, d, files in os.walk(path):
+        files_counter += len(files)
+
+    return files_counter
+
+
+steps_per_epoch = get_steps_number(train_path, train_bath_size)
+validation_steps = get_steps_number(validation_path, validation_bath_size)
+test_steps = get_steps_number(test_path, test_bath_size)
 
 print("steps per epoch: ", steps_per_epoch)
-print("validation steps", validation_steps)
+print("validation steps: ", validation_steps)
+print("test steps: ", test_steps)
 
 train_generator = image.ImageDataGenerator().flow_from_directory(
-    train_images_path,
-    classes=class_names,
-    target_size=image_size,
-    color_mode='grayscale',
-    batch_size=train_bath_size,
-    # class_mode='categorical',
-    # shuffle=False
+    train_path,
+    classes = class_names,
+    target_size = image_size,
+    color_mode = 'grayscale',
+    batch_size = train_bath_size
+    )
+
+validation_generator = image.ImageDataGenerator().flow_from_directory(
+    validation_path,
+    classes = class_names,
+    target_size = image_size,
+    color_mode = 'grayscale',
+    batch_size = validation_bath_size,
+    shuffle = False
     )
 
 test_generator = image.ImageDataGenerator().flow_from_directory(
-    test_images_path,
-    classes=class_names,
-    target_size=image_size,
-    color_mode='grayscale',
-    batch_size=test_bath_size,
-    # class_mode='categorical',
-    shuffle=False
+    test_path,
+    classes = class_names,
+    target_size = image_size,
+    color_mode = 'grayscale',
+    batch_size = test_bath_size,
+    shuffle = False
     )
 
 # building model
@@ -76,7 +89,6 @@ model.add(MaxPooling2D((2, 2), strides = (2, 2), name = 'block0_pool1'))
 model.add(Conv2D(32, (3, 3), activation = 'relu', padding = 'same', name = 'block1_conv1'))
 model.add(Conv2D(32, (3, 3), activation = 'relu', padding = 'same', name = 'block1_conv2'))
 model.add(MaxPooling2D((2, 2), strides = (2, 2), name = 'block1_pool1'))
-
 
 model.add(Conv2D(64, (3, 3), activation = 'relu', padding = 'same', name = 'block2_conv1'))
 model.add(Conv2D(64, (3, 3), activation = 'relu', padding = 'same', name = 'block2_conv2'))
@@ -96,18 +108,25 @@ model.summary()
 
 # compile model
 opt = keras.optimizers.Adam(learning_rate = 0.001)
-model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy"])
-cnn_history = model.fit_generator(
+es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
+
+model.compile(loss = 'categorical_crossentropy',
+              optimizer = opt,
+              metrics = ["accuracy"])
+
+cnn_history = model.fit(
     train_generator,
-    validation_data=test_generator,
-    epochs=epochs,
-    steps_per_epoch=steps_per_epoch,
-    validation_steps=validation_steps,
-    verbose=2)
+    validation_data = validation_generator,
+    epochs = epochs,
+    steps_per_epoch = steps_per_epoch,
+    validation_steps = validation_steps,
+    verbose = 2,
+    callbacks=[es_callback]
+    )
 
 # evaluate the model
-test_generator.reset()
-evaluated_model = model.evaluate_generator(generator=test_generator, steps=validation_steps)
+evaluated_model = model.evaluate(test_generator, steps = test_steps)
+
 print(evaluated_model)
 
 # save model and weight
@@ -124,7 +143,7 @@ plt.plot(cnn_history.history['val_accuracy'])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
 plt.plot(cnn_history.history['loss'])
@@ -132,12 +151,13 @@ plt.plot(cnn_history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
 # confusion matrix and classification report
 test_generator.reset()
-Y_pred = model.predict_generator(test_generator, validation_steps + 1)
+
+Y_pred = model.predict(test_generator)
 y_pred = np.argmax(Y_pred, axis=1)
 
 print('Confusion Matrix')
