@@ -44,16 +44,3 @@ def predict(sample_array):
 
     return np.mean(prediction, axis = 0)
 
-
-def record():
-    rec = sd.rec(int(sample_rate * 6),
-                 samplerate = sample_rate,
-                 channels = 2,
-                 blocking = True)
-
-    return rec
-
-
-recording = record()
-
-print(predict(recording))
