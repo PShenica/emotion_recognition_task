@@ -1,7 +1,5 @@
 from tensorflow.keras.models import load_model
 import numpy as np
-import sounddevice as sd
-from scipy.io.wavfile import write
 import librosa
 import pandas as pd
 
