@@ -5,33 +5,27 @@ import seaborn as sn
 import os
 import keras
 import pandas as pd
-from keras.models import Sequential, Model
+from keras.models import Sequential
 from keras.layers import Dense
-from keras.layers import Flatten, Dropout, Activation
-from keras.layers import Conv1D, MaxPooling1D, BatchNormalization
-from keras.preprocessing import image
+from keras.layers import Flatten, Dropout
+from keras.layers import Conv1D, MaxPooling1D
 from keras.utils import to_categorical
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import tensorflow as tf
 
-# np.set_printoptions(threshold = np.inf)
 
-# fix random seed
 random.seed(0)
 np.random.seed(0)
 
 class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 num_classes = len(class_names)
-image_size = (64, 64)
 
 train_bath_size = 32
 validation_bath_size = 14
 
 epochs = 20
-
 
 data = pd.read_csv("dataset/csv/data.csv")
 
@@ -58,6 +52,14 @@ y_valid = to_categorical(lb.fit_transform(y_valid))
 X_train_cnn = np.expand_dims(X_train, axis=2)
 X_valid_cnn = np.expand_dims(X_valid, axis=2)
 
+y_test = np.array(test_data.emotion)
+X_test = np.array(test_data.drop(['emotion'], axis = 1))
+
+y_test = to_categorical(lb.fit_transform(y_test))
+X_test_cnn = np.expand_dims(X_test, axis=2)
+
+print(X_test_cnn.shape, y_test.shape)
+
 
 def get_steps_number(num, bath_size):
     return num // bath_size
@@ -71,31 +73,27 @@ print("validation steps: ", validation_steps)
 
 
 model = Sequential()
-model.add(Conv1D(256, 8, padding='same', input_shape = (X_train.shape[1], 1)))
-model.add(Activation('relu'))
-model.add(Conv1D(256, 8, padding='same'))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(Dropout(0.25))
-model.add(MaxPooling1D(pool_size=(8)))
-model.add(Conv1D(128, 8, padding='same'))
-model.add(Activation('relu'))
-model.add(Conv1D(128, 8, padding='same'))
-model.add(Activation('relu'))
-model.add(Conv1D(128, 8, padding='same'))
-model.add(Activation('relu'))
-model.add(Conv1D(128, 8, padding='same'))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(Dropout(0.25))
-model.add(MaxPooling1D(pool_size=(8)))
-model.add(Conv1D(64, 8, padding='same'))
-model.add(Activation('relu'))
-model.add(Conv1D(64, 8, padding='same'))
-model.add(Activation('relu'))
+
+model.add(Conv1D(16, 3, activation = 'relu', padding = 'same', input_shape = (X_train_cnn.shape[1], 1)))
+model.add(Conv1D(16, 3, activation = 'relu', padding = 'same'))
+model.add(MaxPooling1D(2, strides = 2))
+
+model.add(Conv1D(32, 3, activation = 'relu', padding = 'same'))
+model.add(Conv1D(32, 3, activation = 'relu', padding = 'same'))
+model.add(MaxPooling1D(2, strides = 2))
+
+model.add(Conv1D(64, 3, activation = 'relu', padding = 'same'))
+model.add(Conv1D(64, 3, activation = 'relu', padding = 'same'))
+model.add(MaxPooling1D(2, strides = 2))
+
+model.add(Conv1D(128, 3, activation = 'relu', padding = 'same'))
+model.add(Conv1D(128, 3, activation = 'relu', padding = 'same'))
+model.add(MaxPooling1D(2, strides = 2))
+
 model.add(Flatten())
-model.add(Dense(7))
-model.add(Activation('softmax'))
+model.add(Dense(128, activation = 'relu'))
+model.add(Dropout(0.4))
+model.add(Dense(num_classes, activation = 'softmax'))
 
 model.summary()
 
@@ -132,3 +130,39 @@ plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
+# evaluate the model
+evaluated_model = model.evaluate(X_test)
+
+print(evaluated_model)
+
+# save model and weight
+model_name = 'Emotion_Voice_Detection_Model.h5'
+save_dir = 'models'
+
+model_path = os.path.join(save_dir, model_name)
+model.save(model_path)
+print('Saved trained model at %s ' % model_path)
+
+# confusion matrix and classification report
+Y_pred = model.predict(X_test_cnn)
+y_pred = np.argmax(Y_pred, axis=1)
+y_test = np.argmax(y_test, axis=1)
+
+confusion_matrix = confusion_matrix(y_test, y_pred)
+classification_report = classification_report(y_test, y_pred, target_names=class_names)
+
+print(confusion_matrix)
+print(classification_report)
+
+# plt confusion matrix
+df_cm = pd.DataFrame(confusion_matrix,
+                     index = class_names,
+                     columns = class_names)
+
+sn.set(font_scale=1.4)
+sn.heatmap(df_cm,
+           annot=True,
+           annot_kws={"size": 16},
+           cmap="RdPu")
+
+plt.show()
