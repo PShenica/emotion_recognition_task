@@ -3,6 +3,7 @@ import numpy as np
 import librosa
 import pandas as pd
 
+class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 model_path = "models/Emotion_Voice_Detection_Model_1D.h5"
 model = load_model(model_path)
 model_sample_shape = (164, 1)
@@ -32,7 +33,10 @@ def prepare_data(mfccs):
 
 
 def predict(sample_array):
-    sample_array = np.mean(sample_array, axis = 1)
+
+    if sample_array[0] != 0:
+        sample_array = np.mean(sample_array, axis = 1)
+
     mfccs = get_mfccs(sample_array)
     df = prepare_data(mfccs)
 
@@ -42,3 +46,8 @@ def predict(sample_array):
 
     return np.mean(prediction, axis = 0)
 
+
+y, sr = librosa.load("my_recordings/record.wav", sr = sample_rate)
+prediction = predict(y)
+print(prediction)
+print(class_names[np.argmax(prediction)])
