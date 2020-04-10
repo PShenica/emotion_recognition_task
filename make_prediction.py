@@ -4,7 +4,7 @@ import librosa
 import pandas as pd
 import io
 
-class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+class_names = ['neutral', 'surprise', 'happy', 'angry', 'sad', 'fear']
 model_path = "models/Emotion_Voice_Detection_Model_1D.h5"
 model = load_model(model_path)
 model_sample_shape = (164, 1)
@@ -50,3 +50,13 @@ def predict(string_bytes):
     prediction_mean = np.mean(prediction, axis = 0)
 
     return class_names[np.argmax(prediction_mean)]
+
+
+"""
+Example:
+
+file_path = "my_recordings/test.wav"
+
+with open(file_path, mode = "rb") as file:
+    print(predict(file.read()))
+"""
