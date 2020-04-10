@@ -3,7 +3,7 @@ from pydub import AudioSegment, silence
 from tqdm import tqdm
 
 dataset_path = os.path.join('dataset')
-class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+class_names = ['neutral', 'surprise', 'happy', 'angry', 'sad', 'fear']
 audio_path = 'ramas'
 new_audio_path = 'recordings'
 

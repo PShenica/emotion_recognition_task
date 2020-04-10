@@ -18,7 +18,7 @@ from sklearn.preprocessing import LabelEncoder
 random.seed(0)
 np.random.seed(0)
 
-class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+class_names = ['neutral', 'surprise', 'happy', 'angry', 'sad', 'fear']
 
 num_classes = len(class_names)
 
