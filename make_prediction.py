@@ -2,6 +2,7 @@ from tensorflow.keras.models import load_model
 import numpy as np
 import librosa
 import pandas as pd
+import io
 
 class_names = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 model_path = "models/Emotion_Voice_Detection_Model_1D.h5"
@@ -32,7 +33,9 @@ def prepare_data(mfccs):
     return df
 
 
-def predict(sample_array):
+def predict(string_bytes):
+    stream = io.BytesIO(string_bytes)
+    sample_array, sr = librosa.load(stream, sr = sample_rate)
 
     if sample_array[0] != 0:
         sample_array = np.mean(sample_array, axis = 1)
@@ -44,10 +47,6 @@ def predict(sample_array):
     X_test_cnn = np.expand_dims(X_test, axis = 2)
     prediction = model.predict(X_test_cnn)
 
-    return np.mean(prediction, axis = 0)
+    prediction_mean = np.mean(prediction, axis = 0)
 
-
-y, sr = librosa.load("my_recordings/record.wav", sr = sample_rate)
-prediction = predict(y)
-print(prediction)
-print(class_names[np.argmax(prediction)])
+    return class_names[np.argmax(prediction_mean)]
